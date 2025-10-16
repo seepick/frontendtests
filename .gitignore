@@ -1,0 +1,6 @@
+# npm
+.angular/
+node_modules/
+
+# local
+.DS_Store
