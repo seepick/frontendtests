@@ -30,22 +30,28 @@ Howto Setup
     * click on e2e
     * it will create files and folders for you
 * setup cypress
-    * get the cypress.config.ts file from a colleague, override the content from generated one
-    * get the tsconfig.json file from a colleague, paste it in cypress/ folder
     * see setup_files/ for the original files
+    * use cypress.config.ts file to override the content from generated one
+    * copy tsconfig.json and paste it in cypress/ folder
 * create first tests:
     * create cypress/e2e folder
-    * create files: cypress/e2e/test.feature and cypress/e2e/test.steps.ts
-
+    * create files:
+        * cypress/e2e/test.feature
+        * cypress/e2e/test.steps.ts
+        * cypress/support/step_definitions/foobar.ts
 * run tests
     * run the angular app in the background (separate terminal)
-        $ ng serve
+        * $ ng serve
     * run headless tests
         * $ npx cypress run
     * run the UI
         * $ npx cypress open
 
 
+TODO
+===========================
+* [ ] write simple angular application
+* [ ] write test bodies to actually test the webapp
 
 Resources
 ===========================
