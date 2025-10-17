@@ -41,12 +41,9 @@ Howto Setup
         * cypress/e2e/test.steps.ts
         * cypress/support/step_definitions/foobar.ts
 * run tests
-    * run the angular app in the background (separate terminal)
-        * $ ng serve
-    * run headless tests
-        * $ npx cypress run
-    * run the UI
-        * $ npx cypress open
+    * run the angular app: $ ng serve
+    * run interactive UI: $ npx cypress open
+    * OR run headless tests: $ npx cypress run
 
 
 TODO
@@ -57,3 +54,6 @@ TODO
 Resources
 ===========================
 * official cypress documentation: https://docs.cypress.io/
+* learn angular with tutorial: https://v17.angular.io/tutorial/first-app
+* cypress cucumber preprocessor: https://github.com/badeball/cypress-cucumber-preprocessor
+    * examples: https://github.com/badeball/cypress-cucumber-preprocessor/tree/master/examples
