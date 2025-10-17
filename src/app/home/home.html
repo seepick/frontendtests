@@ -1,0 +1,14 @@
+<section>
+    <form [formGroup]="applyForm" (submit)="submitApplication()">
+    <input id="search-term" formControlName="searchTerm" type="text" placeholder="Enter search term" />
+    <button class="primary" type="button" (click)="submitApplication()">Search</button>
+    </form>
+</section>
+<section class="results">
+    <input type="text" [value]="resultText" />
+</section>
+<ul>
+    <div *ngFor="let person of persons">
+        <li>{{ person.name }} is {{ person.age }} years old</li>
+    </div>
+</ul>

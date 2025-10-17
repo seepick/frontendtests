@@ -1,8 +1,9 @@
 
 Howto Setup
 ===========================
-
-* isntall node/NPM
+* install VS code: https://code.visualstudio.com
+    * install angular plugin: https://marketplace.visualstudio.com/items?itemName=Angular.ng-template
+* install node/NPM
     * $ brew install node
     * verify:
         * $ node -v
