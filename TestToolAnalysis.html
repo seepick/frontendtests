@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Report: Test Management Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: A single-page dashboard designed for direct comparison. It starts with a visual confirmation of the user's workflow, then presents an interactive comparison hub. Users can get a high-level overview from a multi-tool radar chart and a grid of summary cards. Clicking a card dynamically populates a detailed view with specific information (features, integrations, BDD support, pricing) and a focused bar chart for that tool. A filtering system helps users prioritize tools based on key needs like 'Jira Integration' or 'BDD Support'. This structure was chosen to move from a broad comparison to a deep dive intuitively, allowing users to explore and contrast options without leaving the page, which is more efficient than a linear report. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Overall tool comparison -> Goal: Compare -> Viz: Radar Chart (Chart.js) -> Interaction: Hover tool name highlights dataset, click legend to toggle visibility -> Justification: Radar charts are excellent for visualizing multivariate data, showing strengths/weaknesses across uniform criteria at a glance.
+        - Report Info: Individual tool ratings -> Goal: Inform -> Viz: Vertical Bar Chart (Chart.js) -> Interaction: Dynamically generated when a tool is selected -> Justification: A simple bar chart is the clearest way to show a single entity's scores across different categories.
+        - Report Info: User's desired workflow -> Goal: Organize -> Viz: HTML/CSS Flexbox Diagram -> Interaction: Hover for tooltips -> Justification: A simple, non-interactive diagram built with standard HTML is lightweight and effectively confirms understanding of the user's process.
+        - Report Info: Detailed tool features, pricing, etc. -> Goal: Inform -> Viz: Dynamic Text Blocks -> Interaction: Content updates on tool selection -> Justification: Keeps the UI clean by only showing detailed text for the currently selected tool, reducing cognitive load. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f7f4;
+            color: #3f3c3a;
+        }
+        .card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border: 1px solid #e0ddd7;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .card.active {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+        }
+        .filter-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .filter-btn.active {
+            background-color: #4a90e2;
+            color: white;
+        }
+        .highlight {
+            border: 2px solid #34d399;
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.5);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 500px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold leading-tight text-gray-800">Test Management Tool Analysis</h1>
+            <p class="text-gray-500 mt-1">An interactive guide to selecting the right tool for your testing workflow.</p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        
+        <section id="workflow" class="mb-12 p-6 bg-white rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Your Desired Automation Flow</h2>
+            <p class="text-gray-600 mb-6">This application analyzes tools based on their ability to support your target workflow, from feature definition to reporting. The goal is a seamless, automated process that integrates with your existing ecosystem.</p>
+            <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-4 text-center">
+                <div class="flex-1 p-3 bg-gray-100 rounded-md">Feature Definition</div>
+                <div class="text-gray-400 font-bold text-2xl transform md:rotate-0 rotate-90">&rarr;</div>
+                <div class="flex-1 p-3 bg-gray-100 rounded-md">Risk Analysis & Coverage</div>
+                <div class="text-gray-400 font-bold text-2xl transform md:rotate-0 rotate-90">&rarr;</div>
+                <div class="flex-1 p-3 bg-blue-100 rounded-md font-semibold">Translate to DSL (Cucumber)</div>
+                <div class="text-gray-400 font-bold text-2xl transform md:rotate-0 rotate-90">&rarr;</div>
+                <div class="flex-1 p-3 bg-gray-100 rounded-md">Run Tests & Notify</div>
+                <div class="text-gray-400 font-bold text-2xl transform md:rotate-0 rotate-90">&rarr;</div>
+                <div class="flex-1 p-3 bg-green-100 rounded-md font-semibold">Generate Reports</div>
+            </div>
+        </section>
+
+        <section id="comparison-hub" class="mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Tool Comparison Hub</h2>
+            <p class="text-gray-600 mb-6">Use the radar chart for a high-level comparison and click on any tool card below to see a detailed breakdown. Use the filters to highlight tools that excel in specific areas.</p>
+
+            <div class="chart-container mb-10 p-6 bg-white rounded-lg shadow-sm">
+                <canvas id="comparisonRadarChart"></canvas>
+            </div>
+
+            <div id="filters" class="flex flex-wrap gap-2 mb-8">
+                <button class="filter-btn px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100" data-filter="all">Show All</button>
+                <button class="filter-btn px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100" data-filter="integration">Best Jira Integration</button>
+                <button class="filter-btn px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100" data-filter="bdd">Strongest BDD Support</button>
+                <button class="filter-btn px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100" data-filter="reporting">Best Reporting</button>
+                <button class="filter-btn px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100" data-filter="saas">Cloud/SaaS Leaders</button>
+            </div>
+
+            <div id="tool-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+        
+        <section id="detailed-view" class="sticky top-24">
+            <div id="detailed-content" class="bg-white rounded-lg shadow-lg p-8 min-h-[300px] transition-opacity duration-300">
+                <div class="text-center text-gray-500 py-20">
+                    <p class="text-lg">Select a tool above to view detailed information.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const toolsData = {
+            xray: {
+                id: 'xray',
+                name: 'Xray Test Management',
+                logo: '🎯',
+                summary: 'A native Jira app that provides comprehensive test management capabilities directly within the Jira UI. A top choice for teams deeply embedded in the Atlassian ecosystem.',
+                ratings: { bdd: 5, reporting: 4, integration: 5, automation: 4, cost: 3 },
+                filters: ['integration', 'bdd'],
+                details: {
+                    strengths: 'Native Jira experience, excellent traceability from requirements to defects, strong BDD support with direct Gherkin editing, and extensive REST API for automation.',
+                    ecosystem: 'Lives inside Jira. Integrates seamlessly with Confluence. Connects with virtually any CI/CD tool (Jenkins, Bamboo, GitLab CI) and automation framework (Cypress, Selenium, Karate).',
+                    bddSupport: 'First-class citizen. You can create Cucumber scenarios directly in Jira issues. Imports feature files from Git repositories and links them to requirements.',
+                    reporting: 'Rich, customizable reports and dashboards within Jira. Provides test coverage reports, execution trends, and traceability reports. JQL can be used for advanced querying.',
+                    pricing: 'Per-user pricing, can become costly for very large teams. Available on Jira Cloud, Server, and Data Center. No free tier, but offers a 30-day trial.',
+                    bestFit: 'Teams heavily invested in Jira who want a fully integrated, powerful BDD and test management solution without leaving their primary project management tool.'
+                }
+            },
+            zephyr: {
+                id: 'zephyr',
+                name: 'Zephyr Scale & Squad',
+                logo: '🌬️',
+                summary: 'Part of the SmartBear family, Zephyr offers multiple products for Jira integration (Scale & Squad) to suit different team sizes and complexities.',
+                ratings: { bdd: 4, reporting: 4, integration: 5, automation: 4, cost: 4 },
+                filters: ['integration', 'saas'],
+                details: {
+                    strengths: 'Flexible options for different team sizes. Zephyr Scale is powerful with versioning and reusability. Zephyr Squad is simpler for smaller teams. Good REST API support.',
+                    ecosystem: 'Deep integration with Jira is its main selling point. Connects to CI/CD tools and supports various automation frameworks via its API.',
+                    bddSupport: 'Supports BDD, allowing import of feature files. Includes a Gherkin editor within Jira. Traceability from features to tests and executions is well-supported.',
+                    reporting: 'Good built-in reporting and dashboard gadgets for Jira. Traceability matrix, execution reports, and test automation summaries are available. Can be extended with custom queries.',
+                    pricing: 'Tiered pricing based on the number of users, generally considered competitive. Zephyr Squad is more affordable than Zephyr Scale.',
+                    bestFit: 'Teams of all sizes using Jira who need a scalable and flexible test management solution, from simple test case management to advanced, structured testing.'
+                }
+            },
+            testrail: {
+                id: 'testrail',
+                name: 'TestRail',
+                logo: '🚄',
+                summary: 'A standalone, web-based test case management tool known for its clean UI and flexibility. Integrates with Jira and other tools but lives outside of them.',
+                ratings: { bdd: 3, reporting: 5, automation: 4, cost: 4 },
+                filters: ['reporting', 'saas'],
+                details: {
+                    strengths: 'Excellent user interface, highly customizable, and fantastic reporting capabilities. Strong focus on organizing test cases, plans, and runs. Very flexible API.',
+                    ecosystem: 'Integrates well with issue trackers like Jira, GitHub Issues, and Azure DevOps. Connects to automation frameworks via its API. Not tied to any single ecosystem.',
+                    bddSupport: 'No native Gherkin editor. BDD is typically handled by mapping test case IDs to scenarios in your code repository. It tracks the results, but doesn\'t manage the feature files themselves.',
+                    reporting: 'A key strength. Offers a wide variety of beautiful, detailed reports out-of-the-box: summary reports, defect tracking, workload comparison, and more. Reports are highly configurable.',
+                    pricing: 'Per-user subscription model for Cloud and Server editions. Considered to have a good balance of features for its price point.',
+                    bestFit: 'Teams who want a dedicated, powerful test management tool separate from their issue tracker, and who place a high value on UI/UX and reporting capabilities.'
+                }
+            },
+            practitest: {
+                id: 'practitest',
+                name: 'PractiTest',
+                logo: '🔬',
+                summary: 'An end-to-end SaaS test management platform that focuses on centralization and visibility across all testing activities, from manual to automated.',
+                ratings: { bdd: 4, reporting: 5, integration: 4, automation: 5, cost: 3 },
+                filters: ['reporting', 'saas', 'bdd'],
+                details: {
+                    strengths: 'Highly customizable dashboards and reports. Strong focus on reusability of test assets. Excellent integration capabilities and a unique "test value" concept.',
+                    ecosystem: 'Two-way integration with Jira, Azure DevOps, GitHub, etc. Integrates with CI/CD tools and has a robust API. Works well with Cucumber, Cypress, and other frameworks.',
+                    bddSupport: 'Good BDD support. You can author, manage, and link Gherkin feature files directly within the platform, maintaining traceability.',
+                    reporting: 'Advanced reporting is a core feature. Create customizable dashboards with various graphs and charts. Provides end-to-end visibility and traceability reports.',
+                    pricing: 'Per-user pricing, positioned as a premium product. Pricing is generally higher than some competitors but includes all features and support.',
+                    bestFit: 'Mature QA teams looking for a centralized, highly-customizable platform to manage all aspects of their testing process with a strong emphasis on data-driven insights.'
+                }
+            },
+            azure_test_plans: {
+                id: 'azure_test_plans',
+                name: 'Azure Test Plans',
+                logo: '🌀',
+                summary: 'A component of Azure DevOps (ADO), providing test planning, execution, and tracking capabilities directly within the Microsoft ecosystem.',
+                ratings: { bdd: 3, reporting: 3, integration: 4, automation: 4, cost: 5 },
+                filters: ['integration'],
+                details: {
+                    strengths: 'Perfect integration with the rest of Azure DevOps (Boards, Repos, Pipelines). Cost-effective for teams already on the platform. Supports both manual and automated testing.',
+                    ecosystem: 'Natively integrated with ADO. Can connect to GitHub. Test execution is tightly coupled with Azure Pipelines for CI/CD.',
+                    bddSupport: 'Supports BDD, but it is less seamless than tools like Xray. Typically requires extensions (e.g., SpecFlow) to integrate Gherkin files and results effectively.',
+                    reporting: 'Good reporting within the ADO ecosystem, with configurable dashboards and progress reports. However, it can be less flexible and visually appealing than dedicated tools like TestRail.',
+                    pricing: 'Very cost-effective. Included in Visual Studio subscriptions and available as a per-user add-on for ADO. A "Basic" plan includes some testing features for free.',
+                    bestFit: 'Teams fully committed to the Microsoft Azure DevOps ecosystem who want a tightly integrated and cost-effective test management solution.'
+                }
+            },
+            qtest: {
+                id: 'qtest',
+                name: 'Tricentis qTest',
+                logo: '📈',
+                summary: 'An enterprise-grade test management solution that provides broad integration capabilities and scales for large, complex organizations.',
+                ratings: { bdd: 4, reporting: 4, integration: 4, automation: 5, cost: 2 },
+                filters: ['bdd', 'reporting'],
+                details: {
+                    strengths: 'Scales to enterprise needs. Strong test automation and exploratory testing support. Good for managing testing across multiple projects and teams.',
+                    ecosystem: 'Integrates with a wide range of tools, including Jira, automation frameworks (open source and Tricentis\' own), and CI/CD platforms. Not tied to one ecosystem.',
+                    bddSupport: 'Strong support for BDD with qTest Scenario. Allows teams to manage feature files in Jira or qTest, collaborate on Gherkin syntax, and link them to test execution.',
+                    reporting: 'Powerful and comprehensive reporting designed for enterprise-level visibility. Provides real-time data on test cycles, coverage, and quality trends.',
+                    pricing: 'Enterprise-focused pricing, often quoted on a case-by-case basis. Generally one of the more expensive options, reflecting its target market.',
+                    bestFit: 'Large enterprises or heavily regulated industries that require a scalable, centralized test management platform with extensive features and integrations.'
+                }
+            },
+        };
+
+        let comparisonChart = null;
+        let detailedChart = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderToolCards();
+            renderComparisonChart();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            const toolCardsGrid = document.getElementById('tool-cards-grid');
+            toolCardsGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.card');
+                if (card) {
+                    const toolId = card.dataset.toolId;
+                    renderDetailedView(toolId);
+                    
+                    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                }
+            });
+
+            const filters = document.getElementById('filters');
+            filters.addEventListener('click', (e) => {
+                if(e.target.tagName === 'BUTTON') {
+                    const filter = e.target.dataset.filter;
+                    applyFilter(filter);
+                    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+            });
+        }
+
+        function applyFilter(filter) {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.classList.remove('highlight');
+                if (filter === 'all' || toolsData[card.dataset.toolId].filters.includes(filter)) {
+                    if (filter !== 'all') {
+                        card.classList.add('highlight');
+                    }
+                }
+            });
+        }
+
+        function renderToolCards() {
+            const grid = document.getElementById('tool-cards-grid');
+            grid.innerHTML = '';
+            for (const toolId in toolsData) {
+                const tool = toolsData[toolId];
+                const cardHTML = `
+                    <div class="card bg-white rounded-lg p-6 cursor-pointer" data-tool-id="${tool.id}">
+                        <div class="flex items-center mb-3">
+                            <span class="text-3xl mr-4">${tool.logo}</span>
+                            <h3 class="text-xl font-semibold text-gray-800">${tool.name}</h3>
+                        </div>
+                        <p class="text-gray-600">${tool.summary}</p>
+                    </div>
+                `;
+                grid.innerHTML += cardHTML;
+            }
+        }
+
+        function renderDetailedView(toolId) {
+            const tool = toolsData[toolId];
+            const contentDiv = document.getElementById('detailed-content');
+            
+            const detailHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div class="lg:col-span-1">
+                        <div class="flex items-center mb-4">
+                            <span class="text-4xl mr-4">${tool.logo}</span>
+                            <h2 class="text-3xl font-bold text-gray-900">${tool.name}</h2>
+                        </div>
+                        <div class="chart-container" style="height: 300px; max-height: 300px; max-width: 400px;">
+                            <canvas id="detailedBarChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6 text-gray-700">
+                        <div><strong class="font-semibold text-gray-800">Key Strengths:</strong> ${tool.details.strengths}</div>
+                        <div><strong class="font-semibold text-gray-800">Integration Ecosystem:</strong> ${tool.details.ecosystem}</div>
+                        <div><strong class="font-semibold text-gray-800">BDD/Cucumber Support:</strong> ${tool.details.bddSupport}</div>
+                        <div><strong class="font-semibold text-gray-800">Reporting Capabilities:</strong> ${tool.details.reporting}</div>
+                        <div><strong class="font-semibold text-gray-800">Pricing Model:</strong> ${tool.details.pricing}</div>
+                        <div class="p-4 bg-blue-50 rounded-lg"><strong class="font-semibold text-blue-800">Best Fit For:</strong> ${tool.details.bestFit}</div>
+                    </div>
+                </div>
+            `;
+            contentDiv.innerHTML = detailHTML;
+            
+            renderDetailedBarChart(tool);
+        }
+
+        function renderComparisonChart() {
+            const ctx = document.getElementById('comparisonRadarChart').getContext('2d');
+            const labels = ['BDD Support', 'Reporting', 'Jira Integration', 'Automation API', 'Cost-Effectiveness'];
+            
+            const datasets = Object.values(toolsData).map((tool, index) => {
+                const colors = ['rgba(74, 144, 226, 0.5)', 'rgba(211, 52, 100, 0.5)', 'rgba(52, 211, 153, 0.5)', 'rgba(245, 166, 35, 0.5)', 'rgba(126, 87, 194, 0.5)', 'rgba(2, 132, 199, 0.5)'];
+                const borderColors = ['rgb(74, 144, 226)', 'rgb(211, 52, 100)', 'rgb(52, 211, 153)', 'rgb(245, 166, 35)', 'rgb(126, 87, 194)', 'rgb(2, 132, 199)'];
+                return {
+                    label: tool.name,
+                    data: Object.values(tool.ratings),
+                    backgroundColor: colors[index % colors.length],
+                    borderColor: borderColors[index % borderColors.length],
+                    borderWidth: 2,
+                    pointBackgroundColor: borderColors[index % borderColors.length],
+                };
+            });
+
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+
+            comparisonChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e0ddd7' },
+                            grid: { color: '#e0ddd7' },
+                            pointLabels: { 
+                                font: { size: 12, weight: '500' },
+                                color: '#57534e'
+                            },
+                            ticks: {
+                                backdropColor: '#f8f7f4',
+                                color: '#78716c',
+                                stepSize: 1,
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 5
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { size: 12 },
+                                color: '#3f3c3a'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderDetailedBarChart(tool) {
+            const ctx = document.getElementById('detailedBarChart').getContext('2d');
+            const labels = ['BDD', 'Reporting', 'Jira Int.', 'Automation', 'Cost'];
+            
+            if (detailedChart) {
+                detailedChart.destroy();
+            }
+
+            detailedChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Rating (out of 5)',
+                        data: Object.values(tool.ratings),
+                        backgroundColor: [
+                            'rgba(74, 144, 226, 0.7)',
+                            'rgba(52, 211, 153, 0.7)',
+                            'rgba(245, 166, 35, 0.7)',
+                            'rgba(126, 87, 194, 0.7)',
+                            'rgba(2, 132, 199, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(74, 144, 226)',
+                            'rgb(52, 211, 153)',
+                            'rgb(245, 166, 35)',
+                            'rgb(126, 87, 194)',
+                            'rgb(2, 132, 199)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 5,
+                             grid: { display: false }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
