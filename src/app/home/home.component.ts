@@ -14,15 +14,19 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent {
+
+  resultText: string = 'No search performed yet.';
   persons: Person[] = [];
-  personService: PersonService = inject(PersonService);
   applyForm = new FormGroup({
     searchTerm: new FormControl('')
   });
-  resultText: string = 'No search performed yet.';
+  personService: PersonService = inject(PersonService);
+
+  
   constructor() {
     this.persons = this.personService.getAllPersons();
   }
+
   submitApplication() {
     this.resultText = 'searched for: ' + this.applyForm.value.searchTerm;
     this.personService.doSearch(

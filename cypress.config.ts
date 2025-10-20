@@ -12,8 +12,8 @@ export default defineConfig({
   },
 
   e2e: {
+    baseUrl: "http://localhost:4200", // Angular dev server
     specPattern: "**/*.feature",
-    baseUrl:"http://localhost:4200",
     async setupNodeEvents(on, config) {
         await addCucumberPreprocessorPlugin(on, config);
         on("file:preprocessor", createBundler({
